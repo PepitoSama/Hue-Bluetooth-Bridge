@@ -42,7 +42,7 @@ DEVICES_DEFINITION: List = [
 python3 Main.py
 ```
 
-## Available routes :
+# Available routes :
 
 **Toggle**
 ----
