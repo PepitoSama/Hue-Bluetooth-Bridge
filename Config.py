@@ -10,3 +10,8 @@ DEVICES_DEFINITION: List = [
     "mac_address": "FD:4A:25:A6:62:80"
   }
 ]
+
+#Config Timezone
+class Config:
+  SCHEDULER_API_ENABLED = False
+  SCHEDULER_TIMEZONE = "Europe/Paris"

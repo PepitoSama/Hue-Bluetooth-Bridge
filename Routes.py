@@ -101,7 +101,7 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
     if (device_name):
       device = devices.get(device_name)
       if (device != None):
-        return str(device.connection.is_connected())
+        return str(Tools.is_connected(device.connection))
       else:
         return {
           "error": LANG.DEVICE_NOT_KNOWN
@@ -165,7 +165,7 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
             minute=minute,
             second=second
           )
-          Tools.light_on_bulb_every_day_at(device.connection, scheduler, hour, minute, second)
+          Tools.light_on_bulb_every_day_at(device.connection, scheduler, job_id, hour, minute, second)
           return {
             "message": LANG.DEVICE_SCHEDULE_OK,
             "device_name": device_name,
@@ -189,15 +189,22 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
         "error": LANG.NEED_TO_SPECIFY_DEVICE_NAME
       }
 
-  @app.route(API_START_URI + 'light_on_every', methods=['GET'])
-  def light_on_every():
+  @app.route(API_START_URI + 'toggle_light_every', methods=['GET'])
+  def toggle_light_every():
     device_name = request.args.get('device_name') and str(request.args.get('device_name'))
     second = request.args.get('second') and int(request.args.get('second'))
     if(device_name):
       device = devices.get(device_name)
       if (device != None):
-        Tools.toggle_light_every(device, scheduler, second)
-        Tools.save_job(id=f"light_on_every_{second}_seconds", func="light_on_every", trigger="interval", device_name=device.name, second=1)
+        job_id = f"toggle_light_every_{second}_seconds"
+        Tools.toggle_light_every(device, scheduler, job_id, second)
+        Tools.save_job(
+          id=job_id,
+          func="toggle_light_every",
+          trigger="interval",
+          device_name=device.name,
+          second=1
+        )
         return {
           "message": LANG.DEVICE_SCHEDULE_OK,
           "device_name": device_name,

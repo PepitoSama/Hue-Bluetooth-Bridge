@@ -4,13 +4,9 @@ from Routes import configureRoutes
 import Tools
 from flask_apscheduler import APScheduler
 import flask
+from Config import Config
 
 from HueLight import HueLight
-
-#Config Timezone
-class Config:
-  SCHEDULER_API_ENABLED = False
-  SCHEDULER_TIMEZONE = "Europe/Paris"
 
 if __name__ == '__main__':
 

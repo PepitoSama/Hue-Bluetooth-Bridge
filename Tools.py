@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 from HueLight import HueLight
 from HueDevice import HueDevice
 import datetime
@@ -14,12 +14,13 @@ from flask_apscheduler import APScheduler
 ###
 # Check connection, and try to reconnect if disconnected
 ###
+
 def check_connection(device: HueLight) -> None:
   if (not device.is_connected()):
       print("Reconnecting")
       device.connect()
 
-def get_initialized_devices():
+def get_initialized_devices(wait: bool = False) -> dict:
   devices = dict()
   for device_def in DEVICES_DEFINITION:
     device = HueDevice(device_def["name"], device_def["mac_address"])
@@ -30,8 +31,11 @@ def get_initialized_devices():
       device.manager.run()
     t = Thread(target=run, daemon=True)
     t.start()
-    # device.barrier.wait()
+    if (wait): device.barrier.wait()
   return devices
+
+def is_connected(device: HueDevice) -> bool:
+  return device.connection.is_connected()
 
 #### JSON Methods
 
@@ -75,7 +79,7 @@ def find_job(id: str):
 ###
 # Add one job to jobs.json
 ###
-def save_job(id: str, func: str, trigger: str, **kwargs):
+def save_job(id: str, func: str, **kwargs):
   to_save = get_jobs()
   find_id = find_job(id)
   if (find_id is None):
@@ -84,7 +88,6 @@ def save_job(id: str, func: str, trigger: str, **kwargs):
       "func": func,
       "trigger": trigger,
     }
-    print(kwargs)
     for key, value in kwargs.items():
       to_append[key] = value
     to_save.append(to_append)
@@ -97,15 +100,14 @@ def jobJsonToJob(job, scheduler, devices):
   device_name = job.get("device_name")
   second = job.get("second")
   if (device_name and second):
-    jobFunc = None
     # Get device
     device = devices.get(device_name)
     if (device):
       # Get function
-      if (job["func"] == "light_on_every"):
-        toggle_light_every(device, scheduler, job["second"])
+      if (job["func"] == "toggle_light_every"):
+        toggle_light_every(device, scheduler, job["id"], job["second"])
       elif (job["func"] == "light_on_every_day_at"):
-        light_on_bulb_every_day_at(device.connection, scheduler, job["hour"], job["minute"], job["second"])
+        light_on_bulb_every_day_at(device.connection, scheduler, job["id"], job["hour"], job["minute"], job["second"])
   return None
 
 
@@ -120,9 +122,9 @@ def initialize_scheduler(app):
 ###
 # Schedule light on at a given time
 ###
-def light_on_bulb_at(device: HueLight, scheduler: APScheduler, hour: int , minute: int , second: int) -> bool:
+def light_on_bulb_at(device: HueLight, scheduler: APScheduler, id: str, hour: int , minute: int , second: int) -> bool:
   scheduler.add_job(
-    id=str(random()),
+    id=id,
     func=device.toggle_light,
     trigger="cron",
     hour=hour,
@@ -133,9 +135,9 @@ def light_on_bulb_at(device: HueLight, scheduler: APScheduler, hour: int , minut
 ###
 # Schedule light on every day at a given time
 ###
-def light_on_bulb_every_day_at(device: HueLight, scheduler: APScheduler, hour: int , minute: int , second: int) -> bool:
+def light_on_bulb_every_day_at(device: HueLight, scheduler: APScheduler, id: str, hour: int , minute: int , second: int) -> bool:
   scheduler.add_job(
-    id=str(random()),
+    id=id,
     func=device.light_on,
     trigger="cron",
     hour=hour,
@@ -146,9 +148,9 @@ def light_on_bulb_every_day_at(device: HueLight, scheduler: APScheduler, hour: i
 ###
 # Schedule light on every x second
 ###
-def toggle_light_every(device: HueDevice, scheduler: APScheduler, second: int) -> bool:
+def toggle_light_every(device: HueDevice, scheduler: APScheduler, id: str, second: int) -> bool:
   scheduler.add_job(
-    id=str(random()),
+    id=id,
     func=device.connection.toggle_light,
     trigger="interval",
     seconds=second
@@ -165,3 +167,10 @@ def valide_time(hour: int, minute: int, second: int):
     return True
   except:
     return False
+
+#### Devices management methods
+def get_device(devices: dict, device_name: str) -> HueDevice:
+  try:
+    return devices[device_name]
+  except:
+    return None

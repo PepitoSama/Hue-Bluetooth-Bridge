@@ -176,7 +176,7 @@ python3 Main.py
   Schedule toggle light every x seconds
 
 * **URL**
-  /api/v1/light_on_every_day_at
+  /api/v1/toggle_light_every
 
 * **Method:**
 
