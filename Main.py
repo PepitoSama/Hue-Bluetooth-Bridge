@@ -1,35 +1,42 @@
 #!/usr/bin/env python
-import dbus
-import gatt
 from typing import Dict, List
-from threading import Thread, Barrier
 from Routes import configureRoutes
-from Config import DEVICES_DEFINITION
-from HueDevice import HueDevice
+import Tools
+from flask_apscheduler import APScheduler
+import flask
 
 from HueLight import HueLight
 
-# API imports
-import flask
+#Config Timezone
+class Config:
+  SCHEDULER_API_ENABLED = False
+  SCHEDULER_TIMEZONE = "Europe/Paris"
 
-devices = dict()
-# device = HueLight(mac_address="FD:4A:25:A6:62:80", manager=manager, barrier=b)
+if __name__ == '__main__':
 
-for device_def in DEVICES_DEFINITION:
-  device = HueDevice(device_def["name"], device_def["mac_address"])
-  def run():
-    device.open_connection()
-    devices[device_def["name"]] = device
-    device.connection.connect()
-    device.manager.run()
-  t = Thread(target=run, daemon=True)
-  t.start()
-  device.barrier.wait()
+  # Initialize bluetooth connection with saved devices
+  devices = Tools.get_initialized_devices()
 
+  # Create App
+  app = flask.Flask(__name__)
 
-app = flask.Flask(__name__)
-app.config["DEBUG"] = True
+  #Configure App with Config class
+  app.config.from_object(Config())
 
-configureRoutes(app, devices)
+  # initialize scheduler
+  scheduler = Tools.initialize_scheduler(app)
 
-app.run(host='0.0.0.0')
+  # Add saved jobs
+  jobs = Tools.get_jobs()
+  for job in jobs:
+    Tools.jobJsonToJob(job, scheduler, devices)
+
+  # Configure routes
+  configureRoutes(app, devices, scheduler)
+
+  # Run app
+  app.run(
+    debug=True,
+    use_reloader=True,
+    host='0.0.0.0'
+  )

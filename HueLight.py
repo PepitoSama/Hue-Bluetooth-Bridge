@@ -22,8 +22,6 @@ class HueLight(gatt.Device):
         print(f"connect to {mac_address}...")
         super(HueLight, self).__init__(mac_address=self.mac_address, manager=manager)
 
-    error = False;
-
     ###
     # Method that print all light characteristics
     # (Color, Brightness level ... etc)
@@ -55,19 +53,33 @@ class HueLight(gatt.Device):
                   c.uuid = "FIRMWARE_VERSION"
                 print(f"  characteristic: {c.uuid}: {val}")
 
+    ###
+    # Change color properties
+    ###
     def set_color(self) -> None:
         foo = self.color.write_value(struct.pack("i", 1000))
 
+    ###
+    # Change brightness properties by replacing it
+    ###
     def set_brightness(self, val: int) -> None:
         self.brightness.write_value(struct.pack("B", val))
 
+    ###
+    # Change brightness properties by incrementing it
+    ###
     def varyBrightness(self, val: int) -> None:
         next_brightness = self.getBrightness() + val
         if (next_brightness > 254) : next_brightness = 254
         elif (next_brightness < 1) : next_brightness = 1
         self.brightness.write_value(struct.pack("B", next_brightness ))
 
+    ###
+    # Toggle the lightbulb
+    # ON if OFF, OFF if ON
+    ###
     def toggle_light(self) -> None:
+      if (hasattr(self, "light_state")):
         val = self.light_state.read_value()
         if val is None:
             msg = (
@@ -80,6 +92,9 @@ class HueLight(gatt.Device):
         on = val[0] == 1
         self.light_state.write_value(b"\x00" if on else b"\x01")
 
+    ###
+    # Light on the lightbulb
+    ###
     def light_on(self) -> None:
         val = self.light_state.read_value()
         if val is None:
@@ -93,6 +108,9 @@ class HueLight(gatt.Device):
         on = val[0] == 1
         self.light_state.write_value(b"\x01")
 
+    ###
+    # Light off the lightbulb
+    ###
     def light_off(self) -> None:
         val = self.light_state.read_value()
         if val is None:
@@ -106,6 +124,9 @@ class HueLight(gatt.Device):
         on = val[0] == 1
         self.light_state.write_value(b"\x00")
 
+    ###
+    # Method called after connection is established
+    ###
     def services_resolved(self) -> None:
         super().services_resolved()
         for s in self.services:
@@ -122,8 +143,15 @@ class HueLight(gatt.Device):
                     self.color = char
         self.barrier.wait()
 
+    ###
+    # Return lightbulb brightness
+    # 0 <= brightness <= 254
+    ###
     def getBrightness(self) -> int:
         return int(self.brightness.read_value()[0])
 
+    ###
+    # Change the device mac address
+    ###
     def set_mac_address(self, mac_address) -> None:
         self.mac_address = mac_address
