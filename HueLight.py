@@ -3,12 +3,12 @@ import gatt
 import struct
 from threading import Barrier
 
-LIGHT_CHARACTERISTIC = "932c32bd-0002-47a2-835a-a8d455b859dd"
+LIGHT_CHARACTERISTIC      = "932c32bd-0002-47a2-835a-a8d455b859dd"
 BRIGHTNESS_CHARACTERISTIC = "932c32bd-0003-47a2-835a-a8d455b859dd"
-COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
-PUBLIC_NAME = "97fe6561-0003-4f62-86e9-b71ee2da3d22"
-ZIGBEE_MODELS = "00002a24-0000-1000-8000-00805f9b34fb"
-FIRMWARE_VERSION = "00002a28-0000-1000-8000-00805f9b34fb"
+COLOR_CHARACTERISTIC      = "932c32bd-0004-47a2-835a-a8d455b859dd"
+PUBLIC_NAME               = "97fe6561-0003-4f62-86e9-b71ee2da3d22"
+ZIGBEE_MODELS             = "00002a24-0000-1000-8000-00805f9b34fb"
+FIRMWARE_VERSION          = "00002a28-0000-1000-8000-00805f9b34fb"
 
 class HueLight(gatt.Device):
     def __init__(
@@ -136,7 +136,7 @@ class HueLight(gatt.Device):
                     print("found light characteristics")
                     self.light_state = char
                 elif char.uuid == BRIGHTNESS_CHARACTERISTIC:
-                    print("found brightness characteristics : " + str(int(val[0])))
+                    print("found brightness characteristics")
                     self.brightness = char
                 elif char.uuid == COLOR_CHARACTERISTIC:
                     print("found color characteristics")
